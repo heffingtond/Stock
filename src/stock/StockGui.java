@@ -104,7 +104,7 @@ public class StockGui
         textArea.setEditable( false ); // Make it non-editable
 
         JScrollPane scrollPane = new JScrollPane( textArea );
-        scrollPane.setBounds( 50, 210, 350, 176 );
+        scrollPane.setBounds( 50, 210, 350, 211 );
         panel.add( scrollPane );
         
         // Add an ActionListener to the button
@@ -131,6 +131,29 @@ public class StockGui
                     textArea.append("Rating " + display.getRating() + ".\n");
                     textArea.append("AltmanZ Score " + display.getAltmanZScore() + ".\n");
                     textArea.append("Piotroski Score " + display.getPiotroskiScore() + ".\n");
+
+                    textArea.append("EARNINGS:" + ".\n");
+                    EarningsBean tempEarningsBean = null;
+                    for ( int i = 0; i < 4; i++ )
+                    {
+                    	tempEarningsBean = display.getAllEarnings().get( i );
+                        String earningsReport = "Date: " + tempEarningsBean.getDate() 
+                        					  + ", EPS Est: " + tempEarningsBean.getEpsEstimated()
+                        					  + ", ESP Act: " + tempEarningsBean.getEpsActual();
+                        if ( tempEarningsBean.getEpsEstimated() != null && tempEarningsBean.getEpsActual() != null )
+                        {
+                            // See if 'missed' or 'beat':
+                        	double epsEst = Double.parseDouble( tempEarningsBean.getEpsEstimated() );
+                        	double epsAct = Double.parseDouble( tempEarningsBean.getEpsActual() );
+                        	if ( epsEst > epsAct ) // missed
+                        		earningsReport += " MISSED";
+                        	else
+                        	if ( epsEst < epsAct ) // beat
+                        		earningsReport += " **BEAT**";
+                        }
+                        textArea.append( earningsReport + ".\n");
+                    }
+                    
                     textArea.append("Timestamp " + display.getTimestamp() + ".\n");
                     textArea.append("----------------------------------" + "\n");
                 }
@@ -148,38 +171,31 @@ public class StockGui
 
         // Create labels for the first tool
         JLabel synopsisLabel = new JLabel( "This tool reports the ticker(s) current snapshot" );
-        synopsisLabel.setBounds( 100, 400, 300, 25 ); // x, y, width, height
+        synopsisLabel.setBounds( 100, 425, 300, 25 ); // x, y, width, height
         panel.add( synopsisLabel );
         JLabel synopsisLabel2 = new JLabel( "along with the consensus target value." );
-        synopsisLabel2.setBounds( 100, 415, 300, 25 ); // x, y, width, height
+        synopsisLabel2.setBounds( 100, 440, 300, 25 ); // x, y, width, height
         panel.add( synopsisLabel2 );
         
-        JLabel tickerLabel = new JLabel( "Enter ticker symbol(s).  If more" );
-        tickerLabel.setBounds( 100, 435, 200, 25 ); // x, y, width, height
-        panel.add( tickerLabel );
-        JLabel tickerLabel2 = new JLabel( "than one, separate with comma: " );
-        tickerLabel2.setBounds( 100, 450, 200, 25 ); // x, y, width, height
-        panel.add( tickerLabel2 );
-
         // Create field for input
         JTextField tickerInputField = new JTextField( 40 );
-        tickerInputField.setBounds( 50, 480, 250, 25 ); // x, y, width, height
+        tickerInputField.setBounds( 50, 465, 250, 25 ); // x, y, width, height
         panel.add( tickerInputField );
         
         // Create a target button
         JButton submitTargetButton = new JButton( "Submit" );
-        submitTargetButton.setBounds( 310, 470, 100, 30 );
+        submitTargetButton.setBounds( 310, 460, 100, 30 );
         panel.add( submitTargetButton );
 
         JLabel targetStatusLabel = new JLabel( "" );
-        targetStatusLabel.setBounds( 310, 500, 200, 25 ); // x, y, width, height
+        targetStatusLabel.setBounds( 310, 485, 200, 25 ); // x, y, width, height
         panel.add( targetStatusLabel );
 
         JTextArea targetTextArea = new JTextArea();
         targetTextArea.setEditable( false ); // Make it non-editable
 
         JScrollPane targetScrollPane = new JScrollPane( targetTextArea );
-        targetScrollPane.setBounds( 50, 520, 350, 170 );
+        targetScrollPane.setBounds( 50, 505, 350, 205 );
         panel.add( targetScrollPane );
         
         // Add an ActionListener to the button
@@ -203,6 +219,29 @@ public class StockGui
                     targetTextArea.append("Rating " + display.getRating() + ".\n");
                     targetTextArea.append("AltmanZ Score " + display.getAltmanZScore() + ".\n");
                     targetTextArea.append("Piotroski Score " + display.getPiotroskiScore() + ".\n");
+                    
+                    targetTextArea.append("EARNINGS:" + ".\n");
+                    EarningsBean tempEarningsBean = null;
+                    for ( int i = 0; i < 4; i++ )
+                    {
+                    	tempEarningsBean = display.getAllEarnings().get( i );
+                        String earningsReport = "Date: " + tempEarningsBean.getDate() 
+                        					  + ", EPS Est: " + tempEarningsBean.getEpsEstimated()
+                        					  + ", ESP Act: " + tempEarningsBean.getEpsActual();
+                        if ( tempEarningsBean.getEpsEstimated() != null && tempEarningsBean.getEpsActual() != null )
+                        {
+                            // See if 'missed' or 'beat':
+                        	double epsEst = Double.parseDouble( tempEarningsBean.getEpsEstimated() );
+                        	double epsAct = Double.parseDouble( tempEarningsBean.getEpsActual() );
+                        	if ( epsEst > epsAct ) // missed
+                        		earningsReport += " MISSED";
+                        	else
+                        	if ( epsEst < epsAct ) // beat
+                        		earningsReport += " **BEAT**";
+                        }
+                        targetTextArea.append( earningsReport + ".\n");
+                    }
+                    
                     targetTextArea.append("Timestamp " + display.getTimestamp() + ".\n");
                     targetTextArea.append("----------------------------------" + "\n");
                 }
@@ -219,31 +258,32 @@ public class StockGui
         panel.setLayout( null ); // Use null layout for absolute positioning (for simplicity)
 
         JLabel synopsisLabel = new JLabel( "This tool reports the ticker(s) current price" );
-        synopsisLabel.setBounds( 100, 700, 300, 25 ); // x, y, width, height
+        synopsisLabel.setBounds( 100, 710, 300, 25 ); // x, y, width, height
         panel.add( synopsisLabel );
         JLabel synopsisLabel2 = new JLabel( "(after hours included)." );
-        synopsisLabel2.setBounds( 100, 715, 300, 25 ); // x, y, width, height
+        synopsisLabel2.setBounds( 100, 725, 300, 25 ); // x, y, width, height
         panel.add( synopsisLabel2 );
         
         // Create field for input
         JTextField tickerInputField = new JTextField( 40 );
-        tickerInputField.setBounds( 50, 735, 250, 25 ); // x, y, width, height
+        tickerInputField.setBounds( 50, 745, 250, 25 ); // x, y, width, height
         panel.add( tickerInputField );
         
         // Create a button
         JButton submitCurrentPriceButton = new JButton( "Submit" );
-        submitCurrentPriceButton.setBounds( 310, 730, 100, 30 );
+        submitCurrentPriceButton.setBounds( 310, 740, 100, 30 );
         panel.add( submitCurrentPriceButton );
 
         JLabel currentPriceStatusLabel = new JLabel( "" );
-        currentPriceStatusLabel.setBounds( 310, 755, 200, 25 ); // x, y, width, height
+        currentPriceStatusLabel.setBounds( 310, 770, 200, 25 ); // x, y, width, height
         panel.add( currentPriceStatusLabel );
 
         JTextArea currentPriceTextArea = new JTextArea();
         currentPriceTextArea.setEditable( false ); // Make it non-editable
 
         JScrollPane currentPriceScrollPane = new JScrollPane( currentPriceTextArea );
-        currentPriceScrollPane.setBounds( 50, 780, 350, 170 );
+//        currentPriceScrollPane.setBounds( 50, 780, 350, 170 );
+        currentPriceScrollPane.setBounds( 50, 790, 350, 110 );
         panel.add( currentPriceScrollPane );
 
         // Add an ActionListener to the button

@@ -1,5 +1,7 @@
 package stock;
 
+import java.util.ArrayList;
+
 public class DisplayPriceToTargetBean
 {
 	private String symbol;
@@ -9,6 +11,7 @@ public class DisplayPriceToTargetBean
 	private String rating;
 	private String altmanZScore;
 	private String piotroskiScore;
+	private ArrayList<EarningsBean> allEarnings = new ArrayList<EarningsBean>();
 	private String timestamp;
 	
 	public String getSymbol()
@@ -79,6 +82,16 @@ public class DisplayPriceToTargetBean
 	public void setRating(String rating)
 	{
 		this.rating = rating;
+	}
+	
+	public ArrayList<EarningsBean> getAllEarnings()
+	{
+		return allEarnings;
+	}
+
+	public void setAllEarnings(ArrayList<EarningsBean> allEarnings)
+	{
+		this.allEarnings = allEarnings;
 	}
 
 	public String getTimestamp()

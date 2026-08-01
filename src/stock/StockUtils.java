@@ -132,6 +132,63 @@ public class StockUtils
         }
 		return returnList;
 	}
+	
+	public static String getEarnings( String ticker )
+	{
+		// Return JSON representation of the ticker profile.
+		String returnList = null;
+        try 
+        {
+            // 1. Define the URL of the REST endpoint
+        	String endpointUrl = "https://financialmodelingprep.com/stable/earnings";
+        	System.out.println( "endpoint: " + endpointUrl );
+        	endpointUrl += "?apikey=" + Constants.FMP_API_KEY;
+        	endpointUrl += "&symbol=" + ticker;
+            @SuppressWarnings("deprecation")
+			URL url = new URL( endpointUrl );
+
+            // 2. Open a connection
+            HttpURLConnection connection = ( HttpURLConnection ) url.openConnection();
+
+            // 3. Set the request method (e.g., GET, POST, PUT, DELETE)
+            connection.setRequestMethod( "GET" );
+
+            // 4. Set request headers (optional, but often necessary for content type, authorization, etc.)
+            connection.setRequestProperty("Accept", "application/json");
+
+            // 5. Get the response code
+            int responseCode = connection.getResponseCode();
+            System.out.println("Response Code: " + responseCode);
+
+            // 6. Read the response
+            if ( responseCode == HttpURLConnection.HTTP_OK ) 
+            {
+                BufferedReader in = new BufferedReader( new InputStreamReader( connection.getInputStream() ) );
+                String inputLine;
+                StringBuilder content = new StringBuilder();
+                while ( ( inputLine = in.readLine() ) != null ) 
+                {
+                    content.append( inputLine );
+                }
+                in.close();
+                returnList = content.toString();
+//                System.out.println( "Response Body: " + content.toString() );
+            } 
+            else 
+            {
+                System.out.println( "Error in GET request: " + responseCode );
+            }
+
+            // 7. Disconnect the connection
+            connection.disconnect();
+
+        } 
+        catch (IOException e) 
+        {
+            e.printStackTrace();
+        }
+		return returnList;
+	}
 
 	public static String getRatingsSnapshot( String ticker )
 	{
@@ -570,6 +627,100 @@ public class StockUtils
 	
 	}
 	
+	private static ArrayList<EarningsBean> loadEarnings( String symbol )
+	{
+		
+		String earningsJson = getEarnings( symbol );
+		
+		ArrayList<EarningsBean> allEarnings = new ArrayList<EarningsBean>();
+		
+		JSONParser parser = new JSONParser();
+		try
+		{
+			EarningsBean earnings = null;
+			JSONArray jsonArray = ( JSONArray ) parser.parse( earningsJson );
+			for ( Object obj : jsonArray ) 
+			{
+				earnings = new EarningsBean();
+				Object numberObj = null;
+				
+				JSONObject jsonObject = ( JSONObject ) obj; // Each element is a JSONObject
+				earnings.setSymbol( ( String ) jsonObject.get( "symbol" ) );
+				earnings.setDate( ( String ) jsonObject.get( "date" ) );
+				
+				numberObj = jsonObject.get("epsActual");
+				if ( numberObj != null )
+				{
+					if ( numberObj instanceof Long )
+					{
+						long priceLong = ( long ) jsonObject.get( "epsActual"  );
+						earnings.setEpsActual( Long.toString( priceLong ) );
+					}
+					else
+					{
+						double priceDouble = ( double ) jsonObject.get( "epsActual" );
+						earnings.setEpsActual( Double.toString( priceDouble ) );
+					}
+				}
+				
+				numberObj = jsonObject.get("epsEstimated");
+				if ( numberObj != null )
+				{
+					if ( numberObj instanceof Long )
+					{
+						long priceLong = ( long ) jsonObject.get( "epsEstimated"  );
+						earnings.setEpsEstimated( Long.toString( priceLong ) );
+					}
+					else
+					{
+						double priceDouble = ( double ) jsonObject.get( "epsEstimated" );
+						earnings.setEpsEstimated( Double.toString( priceDouble ) );
+					}
+				}
+
+				numberObj = jsonObject.get("revenueActual");
+				if ( numberObj != null )
+				{
+					if ( numberObj instanceof Long )
+					{
+						long priceLong = ( long ) jsonObject.get( "revenueActual"  );
+						earnings.setRevenueActual( Long.toString( priceLong ) );
+					}
+					else
+					{
+						double priceDouble = ( double ) jsonObject.get( "revenueActual" );
+						earnings.setRevenueActual( Double.toString( priceDouble ) );
+					}
+				}
+
+				numberObj = jsonObject.get("revenueEstimated");
+				if ( numberObj != null )
+				{
+					if ( numberObj instanceof Long )
+					{
+						long priceLong = ( long ) jsonObject.get( "revenueEstimated"  );
+						earnings.setRevenueEstimated( Long.toString( priceLong ) );
+					}
+					else
+					{
+						double priceDouble = ( double ) jsonObject.get( "revenueEstimated" );
+						earnings.setRevenueEstimated( Double.toString( priceDouble ) );
+					}
+				}
+
+				earnings.setLastUpdated( ( String ) jsonObject.get( "lastUpdated" ) );
+				
+				allEarnings.add( earnings );
+			}
+		}
+		catch( Exception e )
+		{
+			e.printStackTrace();
+		}
+		
+		return allEarnings;
+	}
+	
 	private static RatingsSnapshotBean loadRatingsSnapshot( String symbol )
 	{
 		
@@ -619,6 +770,8 @@ public class StockUtils
 
 				FinancialScoresBean financialScoresBean = loadFinancialScores( quote.getSymbol() );
 				RatingsSnapshotBean ratings = loadRatingsSnapshot( quote.getSymbol() );
+				ArrayList<EarningsBean> allEarnings = loadEarnings( quote.getSymbol() );
+
 
 				DisplayDataBean display = new DisplayDataBean();
 				display.setChangePercentage( quote.getChangePercentage() );
@@ -633,6 +786,8 @@ public class StockUtils
 				display.setRating( ratings.getRating() );
 				display.setAltmanZScore( financialScoresBean.getAltmanZScore() );
 				display.setPiotroskiScore( financialScoresBean.getPiotroskiScore() );
+				display.getAllEarnings().clear();
+				display.getAllEarnings().addAll( allEarnings );
 				display.setTimestamp( quote.getTimestamp() );
 				displayData.add( display );
 			}
@@ -658,6 +813,7 @@ public class StockUtils
 
 					FinancialScoresBean financialScoresBean = loadFinancialScores( quote.getSymbol() );
 					RatingsSnapshotBean ratings = loadRatingsSnapshot( quote.getSymbol() );
+					ArrayList<EarningsBean> allEarnings = loadEarnings( quote.getSymbol() );
 
 					DisplayDataBean display = new DisplayDataBean();
 					display.setChangePercentage( quote.getChangePercentage() );
@@ -672,6 +828,8 @@ public class StockUtils
 					display.setRating( ratings.getRating() );
 					display.setAltmanZScore( financialScoresBean.getAltmanZScore() );
 					display.setPiotroskiScore( financialScoresBean.getPiotroskiScore() );
+					display.getAllEarnings().clear();
+					display.getAllEarnings().addAll( allEarnings );
 					display.setTimestamp( quote.getTimestamp() );
 					displayData.add( display );
 				}
@@ -714,6 +872,7 @@ public class StockUtils
 			//	- All results with a Piotroski score < 5, Weak financial health. 
 			FinancialScoresBean financialScoresBean = loadFinancialScores( quoteShort.getSymbol() );
 			RatingsSnapshotBean ratings = loadRatingsSnapshot( quoteShort.getSymbol() );
+			ArrayList<EarningsBean> allEarnings = loadEarnings( quoteShort.getSymbol() );
 
 			DisplayPriceToTargetBean display = new DisplayPriceToTargetBean();
 			display.setSymbol( quoteShort.getSymbol() );
@@ -724,6 +883,8 @@ public class StockUtils
 			display.setRating( ratings.getRating() );
 			display.setAltmanZScore( financialScoresBean.getAltmanZScore() );
 			display.setPiotroskiScore( financialScoresBean.getPiotroskiScore() );
+			display.getAllEarnings().clear();
+			display.getAllEarnings().addAll( allEarnings );
 			display.setTimestamp( quoteShort.getTimestamp() );
 			displayData.add( display );
 		}
@@ -735,6 +896,8 @@ public class StockUtils
 			//	- All results with a Piotroski score < 5, Weak financial health. 
 			FinancialScoresBean financialScoresBean = loadFinancialScores( after.getSymbol() );
 			RatingsSnapshotBean ratings = loadRatingsSnapshot( after.getSymbol() );
+			ArrayList<EarningsBean> allEarnings = loadEarnings( after.getSymbol() );
+			
 			DisplayPriceToTargetBean display = new DisplayPriceToTargetBean();
 			display.setSymbol( after.getSymbol() );
 			display.setPrice( after.getPrice() );
@@ -743,6 +906,8 @@ public class StockUtils
 			display.setRating( ratings.getRating() );
 			display.setAltmanZScore( financialScoresBean.getAltmanZScore() );
 			display.setPiotroskiScore( financialScoresBean.getPiotroskiScore() );
+			display.getAllEarnings().clear();
+			display.getAllEarnings().addAll( allEarnings );
 			display.setTimestamp( after.getTimestamp() );
 			displayData.add( display );
 		}
