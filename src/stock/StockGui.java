@@ -56,6 +56,7 @@ public class StockGui
 
     private static void placeDeltaComponents( JPanel panel ) 
     {
+    	final int MAX_DISPLAYED_EARNINGS = 4;
         panel.setLayout( null ); // Use null layout for absolute positioning (for simplicity)
 
         // Create labels for the first tool
@@ -134,12 +135,17 @@ public class StockGui
 
                     textArea.append("EARNINGS:" + ".\n");
                     EarningsBean tempEarningsBean = null;
-                    for ( int i = 0; i < 4; i++ )
+                    
+                    int numberOfDisplayedEarnings = MAX_DISPLAYED_EARNINGS;
+                    if ( numberOfDisplayedEarnings > display.getAllEarnings().size() )
+                    	numberOfDisplayedEarnings = display.getAllEarnings().size();
+                    
+                    for ( int i = 0; i < numberOfDisplayedEarnings; i++ )
                     {
                     	tempEarningsBean = display.getAllEarnings().get( i );
                         String earningsReport = "Date: " + tempEarningsBean.getDate() 
                         					  + ", EPS Est: " + tempEarningsBean.getEpsEstimated()
-                        					  + ", ESP Act: " + tempEarningsBean.getEpsActual();
+                        					  + ", EPS Act: " + tempEarningsBean.getEpsActual();
                         if ( tempEarningsBean.getEpsEstimated() != null && tempEarningsBean.getEpsActual() != null )
                         {
                             // See if 'missed' or 'beat':
@@ -167,6 +173,7 @@ public class StockGui
 
     private static void placeTargetComponents( JPanel panel ) 
     {
+    	final int MAX_DISPLAYED_EARNINGS = 4; 
         panel.setLayout( null ); // Use null layout for absolute positioning (for simplicity)
 
         // Create labels for the first tool
@@ -212,6 +219,8 @@ public class StockGui
                     targetTextArea.append("Symbol " + display.getSymbol() + ".\n");
                     targetTextArea.append("Target Consensus " + display.getTargetConsensus() + ".\n");
                     targetTextArea.append("Current Price " + display.getPrice() + ".\n");
+                    String upside = StockUtils.getUpside( display.getPrice(), display.getTargetConsensus() );
+                    targetTextArea.append("Upside % " + upside  + ".\n");
                     if ( display.getVolume() == null )
                     	targetTextArea.append("Volume not listed (after hours)" + ".\n");
                     else
@@ -220,14 +229,19 @@ public class StockGui
                     targetTextArea.append("AltmanZ Score " + display.getAltmanZScore() + ".\n");
                     targetTextArea.append("Piotroski Score " + display.getPiotroskiScore() + ".\n");
                     
+                    int numberOfDisplayedEarnings = MAX_DISPLAYED_EARNINGS;
+                    if ( numberOfDisplayedEarnings > display.getAllEarnings().size() )
+                    	numberOfDisplayedEarnings = display.getAllEarnings().size();
+
+                    
                     targetTextArea.append("EARNINGS:" + ".\n");
                     EarningsBean tempEarningsBean = null;
-                    for ( int i = 0; i < 4; i++ )
+                    for ( int i = 0; i < numberOfDisplayedEarnings; i++ )
                     {
                     	tempEarningsBean = display.getAllEarnings().get( i );
                         String earningsReport = "Date: " + tempEarningsBean.getDate() 
                         					  + ", EPS Est: " + tempEarningsBean.getEpsEstimated()
-                        					  + ", ESP Act: " + tempEarningsBean.getEpsActual();
+                        					  + ", EPS Act: " + tempEarningsBean.getEpsActual();
                         if ( tempEarningsBean.getEpsEstimated() != null && tempEarningsBean.getEpsActual() != null )
                         {
                             // See if 'missed' or 'beat':

@@ -28,7 +28,7 @@ public class StockUtils
             // 1. Define the URL of the REST endpoint
         	String endpointUrl = "https://financialmodelingprep.com/stable/quote";
         	System.out.println( "endpoint: " + endpointUrl );
-        	endpointUrl += "?apikey=" + Constants.FMP_API_KEY;
+        	endpointUrl += "?apikey=" + System.getenv("FMP_API_KEY");
         	endpointUrl += "&symbol=" + ticker;
             @SuppressWarnings("deprecation")
 			URL url = new URL( endpointUrl );
@@ -85,7 +85,7 @@ public class StockUtils
             // 1. Define the URL of the REST endpoint
         	String endpointUrl = "https://financialmodelingprep.com/stable/financial-scores";
         	System.out.println( "endpoint: " + endpointUrl );
-        	endpointUrl += "?apikey=" + Constants.FMP_API_KEY;
+        	endpointUrl += "?apikey=" + System.getenv("FMP_API_KEY");
         	endpointUrl += "&symbol=" + ticker;
             @SuppressWarnings("deprecation")
 			URL url = new URL( endpointUrl );
@@ -142,7 +142,7 @@ public class StockUtils
             // 1. Define the URL of the REST endpoint
         	String endpointUrl = "https://financialmodelingprep.com/stable/earnings";
         	System.out.println( "endpoint: " + endpointUrl );
-        	endpointUrl += "?apikey=" + Constants.FMP_API_KEY;
+        	endpointUrl += "?apikey=" + System.getenv("FMP_API_KEY");
         	endpointUrl += "&symbol=" + ticker;
             @SuppressWarnings("deprecation")
 			URL url = new URL( endpointUrl );
@@ -199,7 +199,7 @@ public class StockUtils
             // 1. Define the URL of the REST endpoint
         	String endpointUrl = "https://financialmodelingprep.com/stable/ratings-snapshot";
         	System.out.println( "endpoint: " + endpointUrl );
-        	endpointUrl += "?apikey=" + Constants.FMP_API_KEY;
+        	endpointUrl += "?apikey=" + System.getenv("FMP_API_KEY");
         	endpointUrl += "&symbol=" + ticker;
             @SuppressWarnings("deprecation")
 			URL url = new URL( endpointUrl );
@@ -256,7 +256,7 @@ public class StockUtils
             // 1. Define the URL of the REST endpoint
         	String endpointUrl = "https://financialmodelingprep.com/stable/aftermarket-trade";
         	System.out.println( "endpoint: " + endpointUrl );
-        	endpointUrl += "?apikey=" + Constants.FMP_API_KEY;
+        	endpointUrl += "?apikey=" + System.getenv("FMP_API_KEY");
         	endpointUrl += "&symbol=" + ticker;
             @SuppressWarnings("deprecation")
 			URL url = new URL( endpointUrl );
@@ -313,7 +313,7 @@ public class StockUtils
             // 1. Define the URL of the REST endpoint
         	String endpointUrl = "https://financialmodelingprep.com/stable/exchange-market-hours";
         	System.out.println( "endpoint: " + endpointUrl );
-        	endpointUrl += "?apikey=" + Constants.FMP_API_KEY;
+        	endpointUrl += "?apikey=" + System.getenv("FMP_API_KEY");
         	endpointUrl += "&exchange=" + exchange;
             @SuppressWarnings("deprecation")
 			URL url = new URL( endpointUrl );
@@ -370,7 +370,7 @@ public class StockUtils
             // 1. Define the URL of the REST endpoint
         	String endpointUrl = "https://financialmodelingprep.com/stable/quote-short";
         	System.out.println( "endpoint: " + endpointUrl );
-        	endpointUrl += "?apikey=" + Constants.FMP_API_KEY;
+        	endpointUrl += "?apikey=" + System.getenv("FMP_API_KEY");
         	endpointUrl += "&symbol=" + ticker;
             @SuppressWarnings("deprecation")
 			URL url = new URL( endpointUrl );
@@ -427,7 +427,7 @@ public class StockUtils
             // 1. Define the URL of the REST endpoint
         	String endpointUrl = "https://financialmodelingprep.com/stable/price-target-consensus";
         	System.out.println( "endpoint: " + endpointUrl );
-        	endpointUrl += "?apikey=" + Constants.FMP_API_KEY;
+        	endpointUrl += "?apikey=" + System.getenv("FMP_API_KEY");
         	endpointUrl += "&symbol=" + ticker;
             @SuppressWarnings("deprecation")
 			URL url = new URL( endpointUrl );
@@ -1654,5 +1654,41 @@ public class StockUtils
 		else
 			displayData = loadCurrentTickerShortPriceData( tickerShortData );
 		return displayData;
+	}
+	
+	public static String getUpside( String currentPrice, String targetPrice )
+	{
+		String upside = null;
+		
+		double current = 0;
+		double target = 0;
+		try
+		{
+			current = Double.parseDouble( currentPrice );
+		}
+		catch( Exception e )
+		{
+			e.printStackTrace();
+			System.out.println( "Could not parse currentPrice to double: " + currentPrice );
+		}
+		try
+		{
+			target = Double.parseDouble( targetPrice );
+		}
+		catch( Exception e )
+		{
+			e.printStackTrace();
+			System.out.println( "Could not parse targetPrice to double: " + targetPrice );
+		}
+		
+		double x = target - current;
+		
+		double y = x/current;
+		
+		y = y * 100; // convert to percentage
+		
+		upside = Double.toString( y );
+		
+		return upside;
 	}
 }

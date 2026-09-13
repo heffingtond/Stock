@@ -8,6 +8,7 @@ public class DisplayPriceToTargetBean
 	private String price;
 	private String volume;
 	private String targetConsensus;
+	private String upside;
 	private String rating;
 	private String altmanZScore;
 	private String piotroskiScore;
@@ -54,6 +55,16 @@ public class DisplayPriceToTargetBean
 		this.targetConsensus = targetConsensus;
 	}
 	
+	public String getUpside()
+	{
+		return upside;
+	}
+
+	public void setUpside(String upside)
+	{
+		this.upside = upside;
+	}
+
 	public String getAltmanZScore()
 	{
 		return altmanZScore;
