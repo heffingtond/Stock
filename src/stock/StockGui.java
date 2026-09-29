@@ -3,9 +3,12 @@ package stock;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -39,7 +42,7 @@ public class StockGui
         frame.add( panel );
         placeDeltaComponents( panel );
         placeTargetComponents( panel );
-        placeCurrentPriceComponents( panel );
+        // placeCurrentPriceComponents( panel );
 
         ImageIcon imageIcon = new ImageIcon( "Icon1.jpg" );
         frame.setIconImage( imageIcon.getImage() );
@@ -205,6 +208,18 @@ public class StockGui
         targetScrollPane.setBounds( 50, 505, 350, 205 );
         panel.add( targetScrollPane );
         
+        JCheckBox increasedEps = new JCheckBox("Estimated Increase in EPS", true); 
+        increasedEps.setBounds( 50, 720, 500, 30 );
+        panel.add( increasedEps );
+
+        JCheckBox upside20Percent = new JCheckBox("20% upside or better", true); 
+        upside20Percent.setBounds( 50, 740, 500, 30 );
+        panel.add( upside20Percent );
+
+        JCheckBox bMinusOrBetter = new JCheckBox("Overall Rating B- or Better", true); 
+        bMinusOrBetter.setBounds( 50, 760, 500, 30 );
+        panel.add( bMinusOrBetter );
+        
         // Add an ActionListener to the button
         submitTargetButton.addActionListener( new ActionListener() 
         {
@@ -216,114 +231,135 @@ public class StockGui
                 ArrayList<DisplayPriceToTargetBean> returnList = StockUtils.displayPriceToTarget( tickerText );
                 for ( DisplayPriceToTargetBean display : returnList )
                 {
-                    targetTextArea.append("Symbol " + display.getSymbol() + ".\n");
-                    targetTextArea.append("Target Consensus " + display.getTargetConsensus() + ".\n");
-                    targetTextArea.append("Current Price " + display.getPrice() + ".\n");
-                    String upside = StockUtils.getUpside( display.getPrice(), display.getTargetConsensus() );
-                    targetTextArea.append("Upside % " + upside  + ".\n");
-                    if ( display.getVolume() == null )
-                    	targetTextArea.append("Volume not listed (after hours)" + ".\n");
-                    else
-                    	targetTextArea.append("Volume " + display.getVolume() + ".\n");
-                    targetTextArea.append("Rating " + display.getRating() + ".\n");
-                    targetTextArea.append("AltmanZ Score " + display.getAltmanZScore() + ".\n");
-                    targetTextArea.append("Piotroski Score " + display.getPiotroskiScore() + ".\n");
-                    
-                    int numberOfDisplayedEarnings = MAX_DISPLAYED_EARNINGS;
-                    if ( numberOfDisplayedEarnings > display.getAllEarnings().size() )
-                    	numberOfDisplayedEarnings = display.getAllEarnings().size();
-
-                    
-                    targetTextArea.append("EARNINGS:" + ".\n");
-                    EarningsBean tempEarningsBean = null;
-                    for ( int i = 0; i < numberOfDisplayedEarnings; i++ )
-                    {
-                    	tempEarningsBean = display.getAllEarnings().get( i );
-                        String earningsReport = "Date: " + tempEarningsBean.getDate() 
-                        					  + ", EPS Est: " + tempEarningsBean.getEpsEstimated()
-                        					  + ", EPS Act: " + tempEarningsBean.getEpsActual();
-                        if ( tempEarningsBean.getEpsEstimated() != null && tempEarningsBean.getEpsActual() != null )
+                	boolean displayOnReport = true;
+                	// If the 'Estimated Increase in EPS' check box is checked, disregard any tickers that do not project an increase.
+                	if ( increasedEps.isSelected() )
+                	{
+                		// Spin through the entire group and collect the latest entries for actual and estimated EPS.
+                        String lastEpsAct = null;
+                        String lastEpsEst = null;
+                        ArrayList<EarningsBean> tempAllEarnings = new ArrayList<EarningsBean>();
+                        tempAllEarnings.addAll( display.getAllEarnings() );
+                        
+                        // Sort by the 'date' String property (Descending)
+                        tempAllEarnings.sort( Comparator.comparing( EarningsBean::getDate ) );
+                        
+                        for ( EarningsBean tempEarningsBean : tempAllEarnings )
                         {
-                            // See if 'missed' or 'beat':
-                        	double epsEst = Double.parseDouble( tempEarningsBean.getEpsEstimated() );
-                        	double epsAct = Double.parseDouble( tempEarningsBean.getEpsActual() );
-                        	if ( epsEst > epsAct ) // missed
-                        		earningsReport += " MISSED";
-                        	else
-                        	if ( epsEst < epsAct ) // beat
-                        		earningsReport += " **BEAT**";
+                        	if ( ! StockUtils.isEmpty( tempEarningsBean.getEpsActual() ) )
+                        		lastEpsAct = tempEarningsBean.getEpsActual();
+                        	if ( ! StockUtils.isEmpty( tempEarningsBean.getEpsEstimated() ) )
+                        		lastEpsEst = tempEarningsBean.getEpsEstimated();
                         }
-                        targetTextArea.append( earningsReport + ".\n");
-                    }
+                        // Now compare the last estimated EPS to the last actual EPS and see if there is a projected increase.
+                        if ( ! StockUtils.isEmpty( lastEpsAct ) && ! StockUtils.isEmpty( lastEpsEst ) )
+                        {
+                        	double lastActual = Double.parseDouble( lastEpsAct );
+                        	double lastEstimated = Double.parseDouble( lastEpsEst );
+                        	if ( lastEstimated < lastActual )
+                        	{
+                            	System.out.println( "EPS decrease anticipated.  Drop from display. " + display.getSymbol() );
+                        		displayOnReport = false;
+                        	}
+                        }
+                	}
+
+                    String upside = StockUtils.getUpside( display.getPrice(), display.getTargetConsensus() );
+
+                    if ( upside20Percent.isSelected() )
+	                	if ( displayOnReport )
+	                	{
+	                		Double upsideDouble = 0.0;
+	                		// Then check to see if the projected upside is 20 percent or more (only if the 20% upside check box is checked)
+	                		try
+	                		{
+	                			upsideDouble = Double.parseDouble( upside );
+	                		}
+	                		catch( Exception ex )
+	                		{
+	                			ex.printStackTrace();
+	                			System.out.println( "Could not parse upside to double: " + upsideDouble );
+	                		}
+	                		if ( upsideDouble < 20 )
+	                		{
+                            	System.out.println( "Projected upside less than 20%.  Drop from display. " + display.getSymbol() );
+	                			displayOnReport = false;
+	                		}
+	                	}
                     
-                    targetTextArea.append("Timestamp " + display.getTimestamp() + ".\n");
-                    targetTextArea.append("----------------------------------" + "\n");
+                    if ( bMinusOrBetter.isSelected() )
+	                	if ( displayOnReport )
+	                	{
+	                		final ArrayList<String> ACCEPTABLE_RANGE = new ArrayList<String>();
+	                		ACCEPTABLE_RANGE.add( "B-" );
+	                		ACCEPTABLE_RANGE.add( "B" );
+	                		ACCEPTABLE_RANGE.add( "B+" );
+	                		ACCEPTABLE_RANGE.add( "A-" );
+	                		ACCEPTABLE_RANGE.add( "A" );
+	                		ACCEPTABLE_RANGE.add( "A+" );
+	                		ACCEPTABLE_RANGE.add( "S-" );
+	                		ACCEPTABLE_RANGE.add( "S" );
+	                		ACCEPTABLE_RANGE.add( "S+" );
+	                		String overallRating = display.getRating();
+	                		if ( overallRating != null )
+	                			overallRating = overallRating.trim();
+	                		
+	                		if ( ! ACCEPTABLE_RANGE.contains( overallRating ) )
+	                		{
+                            	System.out.println( "Rating lower than B-.  Drop from display. " + display.getSymbol() );
+	                			displayOnReport = false;
+	                		}
+	                	}
+                    
+                	
+                	if ( displayOnReport )
+                	{
+	                    targetTextArea.append("Symbol " + display.getSymbol() + ".\n");
+	                    targetTextArea.append("Target Consensus " + display.getTargetConsensus() + ".\n");
+	                    targetTextArea.append("Current Price " + display.getPrice() + ".\n");
+	                    targetTextArea.append("Upside % " + upside  + ".\n");
+	                    if ( display.getVolume() == null )
+	                    	targetTextArea.append("Volume not listed (after hours)" + ".\n");
+	                    else
+	                    	targetTextArea.append("Volume " + display.getVolume() + ".\n");
+	                    targetTextArea.append("Rating " + display.getRating() + ".\n");
+	                    targetTextArea.append("AltmanZ Score " + display.getAltmanZScore() + ".\n");
+	                    targetTextArea.append("Piotroski Score " + display.getPiotroskiScore() + ".\n");
+	                    
+	                    int numberOfDisplayedEarnings = MAX_DISPLAYED_EARNINGS;
+	                    if ( numberOfDisplayedEarnings > display.getAllEarnings().size() )
+	                    	numberOfDisplayedEarnings = display.getAllEarnings().size();
+	
+	                    targetTextArea.append("EARNINGS:" + ".\n");
+	                    EarningsBean tempEarningsBean = null;
+	                    for ( int i = 0; i < numberOfDisplayedEarnings; i++ )
+	                    {
+	                    	tempEarningsBean = display.getAllEarnings().get( i );
+	                        String earningsReport = "Date: " + tempEarningsBean.getDate() 
+	                        					  + ", EPS Est: " + tempEarningsBean.getEpsEstimated()
+	                        					  + ", EPS Act: " + tempEarningsBean.getEpsActual();
+	                        if ( tempEarningsBean.getEpsEstimated() != null && tempEarningsBean.getEpsActual() != null )
+	                        {
+	                            // See if 'missed' or 'beat':
+	                        	double epsEst = Double.parseDouble( tempEarningsBean.getEpsEstimated() );
+	                        	double epsAct = Double.parseDouble( tempEarningsBean.getEpsActual() );
+	                        	if ( epsEst > epsAct ) // missed
+	                        		earningsReport += " MISSED";
+	                        	else
+	                        	if ( epsEst < epsAct ) // beat
+	                        		earningsReport += " **BEAT**";
+	                        }
+	                        targetTextArea.append( earningsReport + ".\n");
+	                    }
+	                    
+	                    targetTextArea.append("Timestamp " + display.getTimestamp() + ".\n");
+	                    targetTextArea.append("----------------------------------" + "\n");
+	                }
                 }
                 if ( returnList.size() == 0 )
                 	targetStatusLabel.setText( "None found" );
                 else
                 	targetStatusLabel.setText( "Done" );
-            }
-        });
-     }
-
-    private static void placeCurrentPriceComponents( JPanel panel ) 
-    {
-        panel.setLayout( null ); // Use null layout for absolute positioning (for simplicity)
-
-        JLabel synopsisLabel = new JLabel( "This tool reports the ticker(s) current price" );
-        synopsisLabel.setBounds( 100, 710, 300, 25 ); // x, y, width, height
-        panel.add( synopsisLabel );
-        JLabel synopsisLabel2 = new JLabel( "(after hours included)." );
-        synopsisLabel2.setBounds( 100, 725, 300, 25 ); // x, y, width, height
-        panel.add( synopsisLabel2 );
-        
-        // Create field for input
-        JTextField tickerInputField = new JTextField( 40 );
-        tickerInputField.setBounds( 50, 745, 250, 25 ); // x, y, width, height
-        panel.add( tickerInputField );
-        
-        // Create a button
-        JButton submitCurrentPriceButton = new JButton( "Submit" );
-        submitCurrentPriceButton.setBounds( 310, 740, 100, 30 );
-        panel.add( submitCurrentPriceButton );
-
-        JLabel currentPriceStatusLabel = new JLabel( "" );
-        currentPriceStatusLabel.setBounds( 310, 770, 200, 25 ); // x, y, width, height
-        panel.add( currentPriceStatusLabel );
-
-        JTextArea currentPriceTextArea = new JTextArea();
-        currentPriceTextArea.setEditable( false ); // Make it non-editable
-
-        JScrollPane currentPriceScrollPane = new JScrollPane( currentPriceTextArea );
-//        currentPriceScrollPane.setBounds( 50, 780, 350, 170 );
-        currentPriceScrollPane.setBounds( 50, 790, 350, 110 );
-        panel.add( currentPriceScrollPane );
-
-        // Add an ActionListener to the button
-        submitCurrentPriceButton.addActionListener( new ActionListener() 
-        {
-            @Override
-            public void actionPerformed( ActionEvent e ) 
-            {
-            	resetTool( currentPriceStatusLabel, currentPriceTextArea );
-                String tickerText = tickerInputField.getText(); // Get text from the input field
-                ArrayList<DisplayCurrentPriceBean> returnList = StockUtils.displayCurrentPrice( tickerText );
-                for ( DisplayCurrentPriceBean display : returnList )
-                {
-                    currentPriceTextArea.append("Symbol " + display.getSymbol() + ".\n");
-                    currentPriceTextArea.append("Current Price " + display.getPrice() + ".\n");
-                    if ( display.getVolume() == null )
-                        currentPriceTextArea.append("Volume not listed (after hours)" + ".\n");
-                    else
-                    	currentPriceTextArea.append("Volume " + display.getVolume() + ".\n");
-                    currentPriceTextArea.append("Timestamp " + display.getTimestamp() + ".\n");
-                    currentPriceTextArea.append("----------------------------------" + "\n");
-                }
-                if ( returnList.size() == 0 )
-                	currentPriceStatusLabel.setText( "None found" );
-                else
-                	currentPriceStatusLabel.setText( "Done" );
             }
         });
      }
